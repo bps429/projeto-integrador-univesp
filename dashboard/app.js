@@ -1,11 +1,3 @@
-// =============================================
-// CEMEI Zacarelli — Dashboard Web
-// UNIVESP — Projeto Integrador
-//
-// ⚠️ ATENÇÃO: substitua os valores abaixo
-// com as credenciais do seu projeto Firebase.
-// =============================================
-
 const firebaseConfig = {
   apiKey:            "COLE_AQUI_SUA_API_KEY",
   authDomain:        "integrador-univesp.firebaseapp.com",
