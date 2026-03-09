@@ -1,0 +1,206 @@
+/* =============================================
+   CEMEI Zacarelli — Dashboard
+   UNIVESP — Projeto Integrador
+============================================= */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #0d1b2a;
+  color: #e0e8f0;
+  min-height: 100vh;
+}
+
+header {
+  background: #112240;
+  border-bottom: 2px solid #1e3a5f;
+  padding: 14px 24px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.logo-area { display: flex; align-items: center; gap: 14px; }
+
+.logo-circle {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: #1565c0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px;
+}
+
+h1 { font-size: 20px; color: #90caf9; }
+.subtitle { font-size: 12px; color: #7a9cc0; margin-top: 2px; }
+
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: #1e3a5f;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #888;
+  transition: background 0.4s;
+}
+
+.status-pill.online .dot  { background: #4caf50; }
+.status-pill.alerta .dot  { background: #f44336; animation: pisca 0.6s infinite; }
+
+@keyframes pisca {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+main {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: #112240;
+  border: 1px solid #1e3a5f;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: background 0.4s, border-color 0.4s;
+}
+
+.alert-card.ativo {
+  background: #3a0d0d;
+  border-color: #f44336;
+}
+
+.alert-icon { font-size: 48px; }
+.alert-title { font-size: 22px; font-weight: 700; }
+.alert-msg { color: #90a4c0; margin-top: 4px; }
+
+.cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.mini-card { text-align: center; }
+.mini-label { font-size: 12px; color: #7a9cc0; margin-bottom: 6px; }
+.mini-value { font-size: 32px; font-weight: 700; color: #90caf9; }
+.mini-unit  { font-size: 12px; color: #7a9cc0; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-header h2 { font-size: 16px; }
+
+.card-header button, .btn-controle {
+  background: #1e3a5f;
+  border: 1px solid #2a5080;
+  color: #90caf9;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.card-header button:hover, .btn-controle:hover { background: #2a5080; }
+
+#historico {
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#historico li {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #0d1b2a;
+  border-left: 3px solid #1e3a5f;
+}
+
+#historico li.alerta-item {
+  border-left-color: #f44336;
+  color: #ffcdd2;
+}
+
+#historico li.vazio { color: #7a9cc0; text-align: center; }
+
+.controles-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  background: #1a1a2e;
+  border: 1px solid #f44336;
+  border-left: 5px solid #f44336;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: translateY(30px);
+  pointer-events: none;
+  transition: opacity 0.35s, transform 0.35s;
+  z-index: 9999;
+}
+
+.toast.visivel {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.toast-icon { font-size: 28px; }
+.toast-title { font-weight: 700; font-size: 14px; color: #f44336; }
+.toast-msg { font-size: 13px; color: #e0e0e0; margin-top: 3px; }
+
+.toast-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+@media (max-width: 600px) {
+  .cards-row { grid-template-columns: 1fr; }
+  .header-content { flex-direction: column; gap: 10px; }
+  .toast { width: calc(100vw - 32px); right: 16px; bottom: 16px; }
+}
