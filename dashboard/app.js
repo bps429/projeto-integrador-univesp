@@ -1,11 +1,11 @@
 const firebaseConfig = {
-  apiKey:            "COLE_AQUI_SUA_API_KEY",
+  apiKey:            "AIzaSyAZku1jcVLXtxzR_d-lR2y4liR_qFCLN_0",
   authDomain:        "integrador-univesp.firebaseapp.com",
   databaseURL:       "https://integrador-univesp-default-rtdb.firebaseio.com",
   projectId:         "integrador-univesp",
-  storageBucket:     "integrador-univesp.appspot.com",
-  messagingSenderId: "COLE_AQUI_SEU_SENDER_ID",
-  appId:             "COLE_AQUI_SEU_APP_ID"
+  storageBucket:     "integrador-univesp.firebasestorage.app",
+  messagingSenderId: "1033756329950",
+  appId:             "1:1033756329950:web:ea2585d83ac3f1bca13f4f"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -122,7 +122,7 @@ function atualizarUI(dados) {
     if (!ultimoAlerta) {
       beepAlerta();
       mostrarToast("Criança detectada! Estatura: " + estatura + " cm");
-      notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança detectada na porta! Estatura: " + estatura + " cm");
+      notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança detectada na porta! Estatura: " + estaltura + " cm");
       adicionarHistorico(estatura, true);
     }
   } else {
