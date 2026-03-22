@@ -10,6 +10,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 
 const alertCard   = document.getElementById("alertCard");
 const alertIcon   = document.getElementById("alertIcon");
@@ -136,16 +137,38 @@ function atualizarUI(dados) {
   ultimoAlerta = alerta;
 }
 
-// Escuta o último evento em /leituras (Firebase Realtime Database)
-db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
-  const dados = snap.val();
-  if (!dados) return;
-  atualizarUI(dados);
-}, function(erro) {
+function setStatusErro(msg) {
   statusPill.className    = "status-pill";
-  statusPillT.textContent = "Erro de conexão";
-  console.error("Firebase erro:", erro);
-});
+  statusPillT.textContent = msg;
+}
+
+async function loginPopup() {
+  const email = prompt("Digite o e-mail do dashboard:");
+  const senha = prompt("Digite a senha:");
+  if (!email || !senha) {
+    setStatusErro("Login cancelado");
+    throw new Error("Login cancelado");
+  }
+  await auth.signInWithEmailAndPassword(email, senha);
+}
+
+async function iniciarFirebase() {
+  try {
+    await loginPopup();
+    // Escuta o último evento em /leituras (Firebase Realtime Database)
+    db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
+      const dados = snap.val();
+      if (!dados) return;
+      atualizarUI(dados);
+    }, function(erro) {
+      setStatusErro("Erro de conexão");
+      console.error("Firebase erro:", erro);
+    });
+  } catch (err) {
+    console.error("Login erro:", err);
+    setStatusErro("Erro de login");
+  }
+}
 
 muteBtn.addEventListener("click", function() {
   muted = !muted;
@@ -166,3 +189,5 @@ limparBtn.addEventListener("click", function() {
 if (Notification.permission === "default") {
   setTimeout(pedirPermissaoNotificacao, 2000);
 }
+
+iniciarFirebase();
