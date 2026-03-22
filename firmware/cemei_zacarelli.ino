@@ -9,6 +9,8 @@
 #include <VL53L0X.h>           // Pololu VL53L0X library
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <WiFiClientSecure.h>
+#include <time.h>
 
 // ── CALIBRAÇÃO ──────────────────────────────────────────────
 const int ALTURA_SENSOR_CM = 200; // altura do sensor ao chão (cm)
@@ -19,7 +21,7 @@ const int ESTATURA_MAX     = 140; // máximo para ser "criança"
 // ── FIREBASE ────────────────────────────────────────────────
 const char* FIREBASE_HOST =
   "https://integrador-univesp-default-rtdb.firebaseio.com";
-const char* FIREBASE_PATH = "/leitura.json";
+const char* FIREBASE_PATH = "/leituras.json"; // histórico (push)
 // ────────────────────────────────────────────────────────────
 
 // ── PINAGEM I2C (ESP32-C3 SuperMini) ────────────────────────
@@ -36,6 +38,12 @@ unsigned long ultimaLeitura = 0;
 // ── ESTADO ANTERIOR (evita envio desnecessário ao Firebase) ──
 bool ultimoAlerta = false;
 int  ultimaEstatura = -1;
+
+// ── NTP ─────────────────────────────────────────────────────
+const char* NTP_SERVER = "pool.ntp.org";
+const long  GMT_OFFSET_SEC = -3 * 3600; // Brasil (UTC-3)
+const int   DAYLIGHT_OFFSET_SEC = 0;
+// ────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────
 void setup() {
@@ -57,6 +65,10 @@ void setup() {
   Serial.print("✅ WiFi conectado! IP: ");
   Serial.println(WiFi.localIP());
 
+  // ── NTP ────────────────────────────────────────────────────
+  configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER);
+  Serial.println("🕒 Sincronizando horário...");
+
   // ── VL53L0X ─────────────────────────────────────────────────
   Wire.begin(SDA_PIN, SCL_PIN);
   sensor.setTimeout(500);
@@ -73,6 +85,14 @@ void setup() {
 
 // ─────────────────────────────────────────────────────────────
 void loop() {
+  // reconexão automática se cair
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ WiFi caiu, tentando reconectar...");
+    WiFi.reconnect();
+    delay(1000);
+    return;
+  }
+
   if (millis() - ultimaLeitura < INTERVALO_MS) return;
   ultimaLeitura = millis();
 
@@ -108,6 +128,17 @@ void loop() {
 }
 
 // ─────────────────────────────────────────────────────────────
+String getTimestamp() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    return "sem_horario";
+  }
+  char buffer[32];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
+  return String(buffer);
+}
+
+// ─────────────────────────────────────────────────────────────
 void enviarFirebase(int estatura, bool alerta) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("⚠️  WiFi desconectado — aguardando reconexão...");
@@ -115,13 +146,14 @@ void enviarFirebase(int estatura, bool alerta) {
   }
 
   // Monta o JSON
-  StaticJsonDocument<128> doc;
+  StaticJsonDocument<160> doc;
   doc["estatura_cm"] = estatura;
   doc["alerta"]      = alerta;
   doc["mensagem"]    = alerta
     ? "Criança detectada na entrada!"
     : "Porta livre";
   doc["ms"] = millis();
+  doc["data_hora"] = getTimestamp();
 
   String payload;
   serializeJson(doc, payload);
@@ -131,13 +163,16 @@ void enviarFirebase(int estatura, bool alerta) {
 
   // Tenta até 3 vezes
   for (int tentativa = 1; tentativa <= 3; tentativa++) {
+    WiFiClientSecure client;
+    client.setInsecure();
+
     HTTPClient http;
-    http.begin(url);
+    http.begin(client, url);
     http.addHeader("Content-Type", "application/json");
 
-    int httpCode = http.PUT(payload);   // PUT sobrescreve o nó /leitura
+    int httpCode = http.POST(payload);   // POST cria histórico
 
-    if (httpCode == 200) {
+    if (httpCode == 200 || httpCode == 204) {
       Serial.println("☁️  Firebase OK: " + payload);
       http.end();
       return;
