@@ -122,7 +122,7 @@ function atualizarUI(dados) {
     if (!ultimoAlerta) {
       beepAlerta();
       mostrarToast("Criança detectada! Estatura: " + estatura + " cm");
-      notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança detectada na porta! Estatura: " + estaltura + " cm");
+      notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança detectada na porta! Estatura: " + estatura + " cm");
       adicionarHistorico(estatura, true);
     }
   } else {
@@ -136,7 +136,8 @@ function atualizarUI(dados) {
   ultimoAlerta = alerta;
 }
 
-db.ref("leitura").on("value", function(snap) {
+// Escuta o último evento em /leituras (Firebase Realtime Database)
+db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
   const dados = snap.val();
   if (!dados) return;
   atualizarUI(dados);
