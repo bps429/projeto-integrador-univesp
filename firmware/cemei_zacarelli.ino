@@ -21,7 +21,7 @@ const int ESTATURA_MAX     = 140; // máximo para ser "criança"
 // ── FIREBASE ────────────────────────────────────────────────
 const char* FIREBASE_HOST =
   "https://integrador-univesp-default-rtdb.firebaseio.com";
-const char* FIREBASE_PATH = "/leituras.json"; // histórico (push)
+const char* FIREBASE_PATH = "/leituras"; // histórico com chave (PUT)
 // ────────────────────────────────────────────────────────────
 
 // ── PINAGEM I2C (ESP32-C3 SuperMini) ────────────────────────
@@ -43,13 +43,22 @@ int  ultimaEstatura = -1;
 const char* NTP_SERVER = "pool.ntp.org";
 const long  GMT_OFFSET_SEC = -3 * 3600; // Brasil (UTC-3)
 const int   DAYLIGHT_OFFSET_SEC = 0;
-// ────────────────────────────────────────────────────────────
+
+String deviceUid;
 
 // ─────────────────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
   delay(500);
   Serial.println("\n🔧 CEMEI Zacarelli — Iniciando...");
+
+  // UID do ESP
+  uint64_t chipid = ESP.getEfuseMac();
+  char uid[17];
+  snprintf(uid, sizeof(uid), "%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
+  deviceUid = String(uid);
+  Serial.print("🆔 UID do ESP: ");
+  Serial.println(deviceUid);
 
   // ── WiFiManager ─────────────────────────────────────────────
   WiFiManager wm;
@@ -119,12 +128,14 @@ void loop() {
                 distCm, estaturaCm,
                 alerta ? "🚨 CRIANÇA DETECTADA!" : "✅ Porta livre");
 
-  // ── Envia ao Firebase só se mudou o estado ─────────────────
-  if (alerta != ultimoAlerta || abs(estaturaCm - ultimaEstatura) >= 2) {
+  // ── Envia ao Firebase só quando detectar criança ───────────
+  if (alerta && (alerta != ultimoAlerta || abs(estaturaCm - ultimaEstatura) >= 2)) {
     enviarFirebase(estaturaCm, alerta);
-    ultimoAlerta   = alerta;
-    ultimaEstatura = estaturaCm;
   }
+
+  // Atualiza estado
+  ultimoAlerta   = alerta;
+  ultimaEstatura = estaturaCm;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -139,6 +150,15 @@ String getTimestamp() {
 }
 
 // ─────────────────────────────────────────────────────────────
+String getKeyTimestamp() {
+  time_t now = time(nullptr);
+  if (now < 100000) { // se NTP ainda não sincronizou
+    return String(millis());
+  }
+  return String((unsigned long)now); // epoch como chave
+}
+
+// ─────────────────────────────────────────────────────────────
 void enviarFirebase(int estatura, bool alerta) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("⚠️  WiFi desconectado — aguardando reconexão...");
@@ -146,7 +166,7 @@ void enviarFirebase(int estatura, bool alerta) {
   }
 
   // Monta o JSON
-  StaticJsonDocument<160> doc;
+  StaticJsonDocument<192> doc;
   doc["estatura_cm"] = estatura;
   doc["alerta"]      = alerta;
   doc["mensagem"]    = alerta
@@ -154,12 +174,13 @@ void enviarFirebase(int estatura, bool alerta) {
     : "Porta livre";
   doc["ms"] = millis();
   doc["data_hora"] = getTimestamp();
+  doc["device_uid"] = deviceUid;
 
   String payload;
   serializeJson(doc, payload);
 
-  // URL completa
-  String url = String(FIREBASE_HOST) + FIREBASE_PATH;
+  String key = getKeyTimestamp();
+  String url = String(FIREBASE_HOST) + FIREBASE_PATH + "/" + key + ".json";
 
   // Tenta até 3 vezes
   for (int tentativa = 1; tentativa <= 3; tentativa++) {
@@ -170,7 +191,7 @@ void enviarFirebase(int estatura, bool alerta) {
     http.begin(client, url);
     http.addHeader("Content-Type", "application/json");
 
-    int httpCode = http.POST(payload);   // POST cria histórico
+    int httpCode = http.PUT(payload);   // PUT com chave (timestamp)
 
     if (httpCode == 200 || httpCode == 204) {
       Serial.println("☁️  Firebase OK: " + payload);
