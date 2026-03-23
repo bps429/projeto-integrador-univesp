@@ -146,7 +146,6 @@ async function loginPopup() {
   const email = prompt("Digite o e-mail do dashboard:");
   const senha = prompt("Digite a senha:");
   if (!email || !senha) {
-    setStatusErro("Login cancelado");
     throw new Error("Login cancelado");
   }
   await auth.signInWithEmailAndPassword(email, senha);
@@ -154,40 +153,4 @@ async function loginPopup() {
 
 async function iniciarFirebase() {
   try {
-    await loginPopup();
-    // Escuta o último evento em /leituras (Firebase Realtime Database)
-    db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
-      const dados = snap.val();
-      if (!dados) return;
-      atualizarUI(dados);
-    }, function(erro) {
-      setStatusErro("Erro de conexão");
-      console.error("Firebase erro:", erro);
-    });
-  } catch (err) {
-    console.error("Login erro:", err);
-    setStatusErro("Erro de login");
-  }
-}
-
-muteBtn.addEventListener("click", function() {
-  muted = !muted;
-  muteBtn.textContent = muted ? "🔕 Som: Desligado" : "🔔 Som: Ligado";
-});
-
-testarBtn.addEventListener("click", function() {
-  atualizarUI({ alerta: true, estatura_cm: 110 });
-  setTimeout(function() { atualizarUI({ alerta: false, estatura_cm: 175 }); }, 6000);
-});
-
-notifBtn.addEventListener("click", pedirPermissaoNotificacao);
-
-limparBtn.addEventListener("click", function() {
-  historico.innerHTML = '<li class="vazio">Nenhum evento registrado ainda.</li>';
-});
-
-if (Notification.permission === "default") {
-  setTimeout(pedirPermissaoNotificacao, 2000);
-}
-
-iniciarFirebase();
+    await
