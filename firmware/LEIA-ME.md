@@ -45,6 +45,61 @@ Baixe em: https://www.arduino.cc/en/software
 
 ---
 
+## Solução de Problemas — Portal Wi-Fi (SSID CEMEI-Config)
+
+Se após gravar o firmware a rede **CEMEI-Config** não aparecer no celular, ou você não conseguir abrir **192.168.4.1**, siga os passos abaixo:
+
+### 1. Verifique se o Serial Monitor confirma o portal ativo
+Abra o Serial Monitor (115200 baud) e procure estas linhas:
+```
+*wm:StartAP with SSID:  CEMEI-Config
+*wm:AP IP address: 192.168.4.1
+*wm:Starting Web Portal
+```
+Se elas aparecerem, o portal está rodando — o problema é apenas na conexão do celular.
+
+### 2. Use apenas redes 2.4 GHz
+O ESP32-C3 **não suporta 5 GHz**. O celular precisa estar conectado na **faixa 2.4 GHz** para enxergar a rede CEMEI-Config e para poder configurar o Wi-Fi da escola/casa.
+
+- No Android: Configurações → Wi-Fi → verifique se há uma opção "2.4 GHz" ou "Frequência"
+- No iOS: conecte-se a uma rede 2.4 GHz e depois escaneie novamente
+
+### 3. Verifique a alimentação da placa
+Uma alimentação insuficiente pode fazer o ESP32 reiniciar antes de subir o portal.
+
+- Use o cabo USB diretamente no computador (evite hubs USB sem alimentação)
+- Certifique-se de que o cabo não é somente de carregamento (precisa de dados)
+- LEDs de alimentação da placa devem estar acesos
+
+### 4. Reinicie a placa corretamente
+Se a placa travou em outro estado, force um reset:
+
+1. Pressione e segure o botão **BOOT**
+2. Enquanto segura, pressione e solte o **RESET** (ou reconecte o USB)
+3. Solte o **BOOT**
+4. A placa vai reiniciar e deve aparecer `StartAP with SSID: CEMEI-Config` no Serial Monitor
+
+### 5. Rede não aparece no celular
+- Desligue o Wi-Fi do celular e ligue novamente
+- Aproxime o celular a menos de 2 metros do ESP32
+- Aguarde até 30 segundos para a rede aparecer na lista
+- Reinicie o celular se a rede ainda não aparecer
+
+### 6. Rede aparece mas não redireciona automaticamente
+Alguns dispositivos não ativam o portal cativo automaticamente. Nesse caso:
+
+1. Conecte-se à rede **CEMEI-Config** (senha: `cemei1234`)
+2. Abra o navegador (Chrome ou Safari)
+3. Digite manualmente: **http://192.168.4.1** (não https)
+4. A página de configuração do Wi-Fi deve aparecer
+
+> ⚠️ **Importante:** use `http://` (não `https://`). Alguns navegadores adicionam `https://` automaticamente — nesse caso o portal não abrirá.
+
+### 7. Mensagem de "sem internet" no celular
+Ao conectar na rede CEMEI-Config, o celular pode mostrar "Rede sem acesso à internet" ou similar — isso é **normal**. O portal não tem internet, é apenas um ponto de acesso local para configuração. Aceite a conexão e continue.
+
+---
+
 ## Ajuste de calibração
 
 Edite no início do arquivo `.ino`:

@@ -12,55 +12,90 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
-const alertCard   = document.getElementById("alertCard");
-const alertIcon   = document.getElementById("alertIcon");
-const alertTitle  = document.getElementById("alertTitle");
-const alertMsg    = document.getElementById("alertMsg");
-const estaturaVal = document.getElementById("estaturaVal");
-const statusVal   = document.getElementById("statusVal");
-const ultimaLeit  = document.getElementById("ultimaLeitura");
-const statusPill  = document.getElementById("statusPill");
-const statusPillT = document.getElementById("statusPillText");
-const historico   = document.getElementById("historico");
-const toast       = document.getElementById("toast");
-const toastMsg    = document.getElementById("toastMsg");
-const muteBtn     = document.getElementById("muteBtn");
-const testarBtn   = document.getElementById("testarBtn");
-const notifBtn    = document.getElementById("notifBtn");
-const limparBtn   = document.getElementById("limparBtn");
-const toastClose  = document.getElementById("toastClose");
+const alertCard    = document.getElementById("alertCard");
+const alertIcon    = document.getElementById("alertIcon");
+const alertTitle   = document.getElementById("alertTitle");
+const alertMsg     = document.getElementById("alertMsg");
+const estaturaVal  = document.getElementById("estaturaVal");
+const statusVal    = document.getElementById("statusVal");
+const ultimaLeit   = document.getElementById("ultimaLeitura");
+const statusPill   = document.getElementById("statusPill");
+const statusPillT  = document.getElementById("statusPillText");
+const historico    = document.getElementById("historico");
+const toast        = document.getElementById("toast");
+const toastMsg     = document.getElementById("toastMsg");
+const muteBtn      = document.getElementById("muteBtn");
+const testarBtn    = document.getElementById("testarBtn");
+const notifBtn     = document.getElementById("notifBtn");
+const limparBtn    = document.getElementById("limparBtn");
+const toastClose   = document.getElementById("toastClose");
+const loginOverlay = document.getElementById("loginOverlay");
+const loginEmail   = document.getElementById("loginEmail");
+const loginSenha   = document.getElementById("loginSenha");
+const loginBtn     = document.getElementById("loginBtn");
+const loginError   = document.getElementById("loginError");
 
 let muted        = false;
 let audioCtx     = null;
 let toastTimer   = null;
 let ultimoAlerta = false;
 
-function setStatusErro(msg) {
-  statusPill.className    = "status-pill";
-  statusPillT.textContent = msg;
+// ── Login overlay helpers ────────────────────────────────────
+function mostrarLoginErro(msg) {
+  loginError.textContent = msg;
+  loginError.style.display = "block";
 }
 
-function bloquearUI(msg) {
-  setStatusErro(msg);
-  alertCard.classList.remove("ativo");
-  alertIcon.textContent = "⛔";
-  alertTitle.textContent = "Acesso bloqueado";
-  alertMsg.textContent = "Faça login para visualizar os dados.";
-  estaturaVal.textContent = "--";
-  statusVal.textContent = "--";
-  ultimaLeit.textContent = "--";
-  historico.innerHTML = '<li class="vazio">Login necessário.</li>';
+function ocultarLoginErro() {
+  loginError.style.display = "none";
 }
 
-async function loginPopup() {
-  const email = prompt("Digite o e-mail do dashboard:");
-  const senha = prompt("Digite a senha:");
+function fecharOverlay() {
+  loginOverlay.style.display = "none";
+}
+
+// ── Firebase login ───────────────────────────────────────────
+loginBtn.addEventListener("click", async function() {
+  const email = loginEmail.value.trim();
+  const senha = loginSenha.value;
+
   if (!email || !senha) {
-    throw new Error("Login cancelado");
+    mostrarLoginErro("Preencha o e-mail e a senha.");
+    return;
   }
-  await auth.signInWithEmailAndPassword(email, senha);
-}
 
+  loginBtn.disabled = true;
+  loginBtn.textContent = "Entrando...";
+  ocultarLoginErro();
+
+  try {
+    // Disable session persistence so login is always required on reload
+    await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    await auth.signInWithEmailAndPassword(email, senha);
+
+    fecharOverlay();
+    iniciarListeners();
+  } catch (err) {
+    console.error("Login erro:", err);
+    const msg = err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+      ? "E-mail ou senha incorretos."
+      : "Erro ao fazer login. Tente novamente.";
+    mostrarLoginErro(msg);
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Entrar";
+  }
+});
+
+// Allow submitting with Enter key
+loginSenha.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") loginBtn.click();
+});
+loginEmail.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") loginSenha.focus();
+});
+
+// ── Firebase data listener ───────────────────────────────────
 function iniciarListeners() {
   db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
     const dados = snap.val();
@@ -72,23 +107,13 @@ function iniciarListeners() {
   });
 }
 
-async function iniciarFirebase() {
-  try {
-    await loginPopup();
-
-    if (!auth.currentUser) {
-      throw new Error("Sem usuário autenticado");
-    }
-
-    iniciarListeners();
-
-  } catch (err) {
-    console.error("Login erro:", err);
-    bloquearUI("Erro de login");
-  }
+// ── Status helpers ───────────────────────────────────────────
+function setStatusErro(msg) {
+  statusPill.className    = "status-pill";
+  statusPillT.textContent = msg;
 }
 
-// === UI original ===
+// ── Audio ────────────────────────────────────────────────────
 function beep(freq = 880, durMs = 600, vol = 0.1) {
   if (muted) return;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -109,6 +134,7 @@ function beepAlerta() {
   setTimeout(() => beep(1000, 400, 0.12), 600);
 }
 
+// ── Toast ────────────────────────────────────────────────────
 function mostrarToast(mensagem) {
   toastMsg.textContent = mensagem;
   toast.classList.add("visivel");
@@ -118,6 +144,7 @@ function mostrarToast(mensagem) {
 
 toastClose.addEventListener("click", () => toast.classList.remove("visivel"));
 
+// ── Notifications ────────────────────────────────────────────
 function pedirPermissaoNotificacao() {
   if (!("Notification" in window)) {
     alert("Seu navegador não suporta notificações.");
@@ -140,6 +167,7 @@ function notificarSistema(titulo, corpo) {
   }
 }
 
+// ── History ──────────────────────────────────────────────────
 function adicionarHistorico(estatura, alerta) {
   const vazio = historico.querySelector(".vazio");
   if (vazio) vazio.remove();
@@ -157,6 +185,7 @@ function adicionarHistorico(estatura, alerta) {
   }
 }
 
+// ── UI update ────────────────────────────────────────────────
 function atualizarUI(dados) {
   const alerta   = !!dados.alerta;
   const estatura = dados.estatura_cm !== undefined ? dados.estatura_cm : "--";
@@ -191,6 +220,7 @@ function atualizarUI(dados) {
   ultimoAlerta = alerta;
 }
 
+// ── Control buttons ──────────────────────────────────────────
 muteBtn.addEventListener("click", function() {
   muted = !muted;
   muteBtn.textContent = muted ? "🔕 Som: Desligado" : "🔔 Som: Ligado";
@@ -211,4 +241,3 @@ if (Notification.permission === "default") {
   setTimeout(pedirPermissaoNotificacao, 2000);
 }
 
-iniciarFirebase();
