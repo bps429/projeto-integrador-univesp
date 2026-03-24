@@ -35,6 +35,60 @@ let audioCtx     = null;
 let toastTimer   = null;
 let ultimoAlerta = false;
 
+function setStatusErro(msg) {
+  statusPill.className    = "status-pill";
+  statusPillT.textContent = msg;
+}
+
+function bloquearUI(msg) {
+  setStatusErro(msg);
+  alertCard.classList.remove("ativo");
+  alertIcon.textContent = "⛔";
+  alertTitle.textContent = "Acesso bloqueado";
+  alertMsg.textContent = "Faça login para visualizar os dados.";
+  estaturaVal.textContent = "--";
+  statusVal.textContent = "--";
+  ultimaLeit.textContent = "--";
+  historico.innerHTML = '<li class="vazio">Login necessário.</li>';
+}
+
+async function loginPopup() {
+  const email = prompt("Digite o e-mail do dashboard:");
+  const senha = prompt("Digite a senha:");
+  if (!email || !senha) {
+    throw new Error("Login cancelado");
+  }
+  await auth.signInWithEmailAndPassword(email, senha);
+}
+
+function iniciarListeners() {
+  db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
+    const dados = snap.val();
+    if (!dados) return;
+    atualizarUI(dados);
+  }, function(erro) {
+    setStatusErro("Erro de conexão");
+    console.error("Firebase erro:", erro);
+  });
+}
+
+async function iniciarFirebase() {
+  try {
+    await loginPopup();
+
+    if (!auth.currentUser) {
+      throw new Error("Sem usuário autenticado");
+    }
+
+    iniciarListeners();
+
+  } catch (err) {
+    console.error("Login erro:", err);
+    bloquearUI("Erro de login");
+  }
+}
+
+// === UI original ===
 function beep(freq = 880, durMs = 600, vol = 0.1) {
   if (muted) return;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -135,44 +189,6 @@ function atualizarUI(dados) {
   }
 
   ultimoAlerta = alerta;
-}
-
-function setStatusErro(msg) {
-  statusPill.className    = "status-pill";
-  statusPillT.textContent = msg;
-}
-
-async function loginPopup() {
-  const email = prompt("Digite o e-mail do dashboard:");
-  const senha = prompt("Digite a senha:");
-  if (!email || !senha) {
-    throw new Error("Login cancelado");
-  }
-  await auth.signInWithEmailAndPassword(email, senha);
-}
-
-async function iniciarFirebase() {
-  try {
-    await loginPopup();
-
-    if (!auth.currentUser) {
-      throw new Error("Sem usuário autenticado");
-    }
-
-    db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
-      const dados = snap.val();
-      if (!dados) return;
-      atualizarUI(dados);
-    }, function(erro) {
-      setStatusErro("Erro de conexão");
-      console.error("Firebase erro:", erro);
-    });
-
-  } catch (err) {
-    console.error("Login erro:", err);
-    setStatusErro("Erro de login");
-    alert("Login necessário para acessar os dados.");
-  }
 }
 
 muteBtn.addEventListener("click", function() {
