@@ -83,6 +83,21 @@
     <button class="toast-close" id="toastClose">✕</button>
   </div>
 
+  <!-- Login overlay — removed by app.js only on successful authentication -->
+  <div id="loginOverlay">
+    <div id="loginBox">
+      <div class="login-logo">CZ</div>
+      <h2>CEMEI Zacarelli</h2>
+      <p class="login-subtitle">Dashboard — Acesso Restrito</p>
+      <div id="loginError" class="login-error" style="display:none;"></div>
+      <label for="loginEmail">E-mail</label>
+      <input type="email" id="loginEmail" placeholder="seuemail@exemplo.com" autocomplete="username" />
+      <label for="loginSenha">Senha</label>
+      <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password" />
+      <button id="loginBtn">Entrar</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
