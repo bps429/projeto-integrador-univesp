@@ -6,7 +6,6 @@
   <title>CEMEI Zacarelli — Monitor de Porta</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
 </head>
 <body>
@@ -14,7 +13,8 @@
   <header>
     <div class="header-content">
       <div class="logo-area">
-        <div class="logo-circle">CZ</div>
+        <img src="logo.png" alt="Logo CEMEI Zacarelli" class="logo-img"
+             onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-circle',textContent:'CZ'}))" />
         <div>
           <h1>CEMEI Zacarelli</h1>
           <p class="subtitle">Sistema de Monitoramento de Porta — UNIVESP</p>
