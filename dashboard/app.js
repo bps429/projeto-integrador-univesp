@@ -10,7 +10,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const auth = firebase.auth();
 
 const alertCard   = document.getElementById("alertCard");
 const alertIcon   = document.getElementById("alertIcon");
@@ -40,27 +39,6 @@ function setStatusErro(msg) {
   statusPillT.textContent = msg;
 }
 
-function bloquearUI(msg) {
-  setStatusErro(msg);
-  alertCard.classList.remove("ativo");
-  alertIcon.textContent = "⛔";
-  alertTitle.textContent = "Acesso bloqueado";
-  alertMsg.textContent = "Faça login para visualizar os dados.";
-  estaturaVal.textContent = "--";
-  statusVal.textContent = "--";
-  ultimaLeit.textContent = "--";
-  historico.innerHTML = '<li class="vazio">Login necessário.</li>';
-}
-
-async function loginPopup() {
-  const email = prompt("Digite o e-mail do dashboard:");
-  const senha = prompt("Digite a senha:");
-  if (!email || !senha) {
-    throw new Error("Login cancelado");
-  }
-  await auth.signInWithEmailAndPassword(email, senha);
-}
-
 function iniciarListeners() {
   db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
     const dados = snap.val();
@@ -72,20 +50,8 @@ function iniciarListeners() {
   });
 }
 
-async function iniciarFirebase() {
-  try {
-    await loginPopup();
-
-    if (!auth.currentUser) {
-      throw new Error("Sem usuário autenticado");
-    }
-
-    iniciarListeners();
-
-  } catch (err) {
-    console.error("Login erro:", err);
-    bloquearUI("Erro de login");
-  }
+function iniciarFirebase() {
+  iniciarListeners();
 }
 
 // === UI original ===
