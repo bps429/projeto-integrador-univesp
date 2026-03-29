@@ -24,7 +24,7 @@ const int ESTATURA_MAX     = 140; // máximo para ser "criança"
 const char* FIREBASE_HOST =
   "https://integrador-univesp-default-rtdb.firebaseio.com";
 const char* FIREBASE_PATH = "/leituras"; // histórico com chave (PUT)
-const char* FIREBASE_API_KEY = "AIzaSyAZku1jcVLXtxzR_d-lR2y4liR_qFCLN_0";
+const char* FIREBASE_API_KEY = "CHAVE_OCULTADA_POR_SEGURANCA";
 // ────────────────────────────────────────────────────────────
 
 // ── PINAGEM I2C (ESP32-C3 SuperMini) ────────────────────────
