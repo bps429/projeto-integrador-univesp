@@ -12,7 +12,7 @@
 #include <WiFiClientSecure.h>
 #include <time.h>
 
-#include "secrets.h" // NÃO subir no GitHub (contém senha)
+#include "secrets.h" 
 
 // ── CALIBRAÇÃO ──────────────────────────────────────────────
 const int ALTURA_SENSOR_CM = 200; // altura do sensor ao chão (cm)
