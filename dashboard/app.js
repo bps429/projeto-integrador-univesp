@@ -34,7 +34,7 @@ let audioCtx     = null;
 let toastTimer   = null;
 let ultimoAlerta = false;
 let resetTimer   = null; // O nosso cronómetro mágico
-let primeiraLeitura = true; // <-- A nossa nova trava de segurança!
+let inicializou = false; // A nossa trava definitiva à prova de falhas!
 
 function setStatusErro(msg) {
   statusPill.className    = "status-pill";
@@ -42,26 +42,28 @@ function setStatusErro(msg) {
 }
 
 function iniciarListeners() {
-  db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
+  const referencia = db.ref("leituras").limitToLast(1);
+
+  // 1. Escuta a entrada de dados (tanto o histórico velho quanto os alertas novos)
+  referencia.on("child_added", function(snap) {
     const dados = snap.val();
     if (!dados) return;
 
-// Se for a primeira vez que o site carrega, ele descarta o histórico e fica em silêncio
-    if (primeiraLeitura) {
-      primeiraLeitura = false;
-      
-// Muda o botão lá em cima para mostrar que o site já conectou ao banco de dados:
-      statusPill.className    = "status-pill online";
-      statusPillT.textContent = "Online";
-      
-      return; 
-    }
+    // Se o sistema ainda não terminou de ler o passado, fica em silêncio e ignora!
+    if (!inicializou) return;
 
-    // A partir da segunda leitura (quando o Arduino mandar um alerta real), ele dispara!
+    // Se passar daqui, é porque é um dado 100% novo. Dispara o alarme!
     atualizarUI(dados);
   }, function(erro) {
     setStatusErro("Erro de ligação");
     console.error("Firebase erro:", erro);
+  });
+
+  // 2. O Firebase dispara o "value" uma única vez após ler todo o histórico antigo.
+  referencia.once("value", function() {
+    inicializou = true; // Destrava o alarme para os próximos movimentos na porta
+    statusPill.className    = "status-pill online";
+    statusPillT.textContent = "Online"; // Fica verde imediatamente ao abrir o ecrã!
   });
 }
 
