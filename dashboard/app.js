@@ -33,7 +33,7 @@ let muted        = false;
 let audioCtx     = null;
 let toastTimer   = null;
 let ultimoAlerta = false;
-let resetTimer   = null; // O nosso cronómetro mágico
+let resetTimer   = null; // O nosso cronômetro mágico
 let inicializou = false; // A nossa trava definitiva à prova de falhas!
 
 function setStatusErro(msg) {
@@ -129,7 +129,7 @@ function adicionarHistorico(estatura, alerta) {
   const li = document.createElement("li");
   if (alerta) {
     li.className = "alerta-item";
-    li.textContent = "🚨 " + agora + " — Criança detetada! Estatura: " + estatura + " cm";
+    li.textContent = "🚨 " + agora + " — Criança detectada! Estatura: " + estatura + " cm";
   } else {
     li.textContent = "✅ " + agora + " — Porta livre. Estatura: " + estatura + " cm";
   }
@@ -157,18 +157,18 @@ function atualizarUI(dados) {
     alertCard.classList.add("ativo");
     alertIcon.textContent  = "🚨";
     alertTitle.textContent = "ATENÇÃO — Criança na Porta!";
-    alertMsg.textContent   = "Estatura detetada: " + estatura + " cm. Verifique a entrada imediatamente!";
+    alertMsg.textContent   = "Estatura detectada: " + estatura + " cm. Verifique a entrada imediatamente!";
 
     // 2. Dispara o som, histórico e pop-up UMA VEZ por ocorrência
     if (!ultimoAlerta) {
       beepAlerta();
-      mostrarToast("Criança detetada! Estatura: " + estatura + " cm");
+      mostrarToast("Criança detectada! Estatura: " + estatura + " cm");
       notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança na porta!");
       adicionarHistorico(estatura, true);
       ultimoAlerta = true; // Trava para não fazer barulho sem parar
     }
 
-    // 3. A MÁGICA: Zera o cronómetro. 
+    // 3. A MÁGICA: Zera o cronômetro. 
     // Se a placa ficar 6 segundos sem mandar alerta, o site limpa o ecrã.
     clearTimeout(resetTimer);
     resetTimer = setTimeout(voltarAoNormal, 6000); 
@@ -187,7 +187,7 @@ function voltarAoNormal() {
   alertCard.classList.remove("ativo");
   alertIcon.textContent  = "✅";
   alertTitle.textContent = "Porta Livre";
-  alertMsg.textContent   = "Nenhuma criança detetada no momento.";
+  alertMsg.textContent   = "Nenhuma criança detectada no momento.";
 
   // Salva no histórico que a porta ficou livre e destrava o próximo alarme
   if (ultimoAlerta) {
@@ -208,7 +208,7 @@ testarBtn.addEventListener("click", function() {
 notifBtn.addEventListener("click", pedirPermissaoNotificacao);
 
 limparBtn.addEventListener("click", function() {
-  historico.innerHTML = '<li class="vazio">Nenhum evento registado ainda.</li>';
+  historico.innerHTML = '<li class="vazio">Nenhum evento registrado ainda.</li>';
 });
 
 if (Notification.permission === "default") {
