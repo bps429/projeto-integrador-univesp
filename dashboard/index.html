@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CEMEI Zacarelli — Monitor de Porta</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <img src="logo.png" alt="Logo CEMEI Zacarelli" class="logo-img"
+             onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-circle',textContent:'CZ'}))" />
+        <div>
+          <h1>CEMEI Zacarelli</h1>
+          <p class="subtitle">Sistema de Monitoramento de Porta — UNIVESP</p>
+        </div>
+      </div>
+      <div class="status-pill" id="statusPill">
+        <span class="dot"></span>
+        <span id="statusPillText">Conectando...</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="card alert-card" id="alertCard">
+      <div class="alert-icon" id="alertIcon">✅</div>
+      <div class="alert-content">
+        <div class="alert-title" id="alertTitle">Porta Livre</div>
+        <div class="alert-msg"  id="alertMsg">Nenhuma ocorrência detectada.</div>
+      </div>
+    </section>
+
+    <section class="cards-row">
+      <div class="card mini-card">
+        <div class="mini-label">Estatura detectada</div>
+        <div class="mini-value" id="estaturaVal">--</div>
+        <div class="mini-unit">cm</div>
+      </div>
+      <div class="card mini-card">
+        <div class="mini-label">Status</div>
+        <div class="mini-value" id="statusVal">--</div>
+      </div>
+      <div class="card mini-card">
+        <div class="mini-label">Última leitura</div>
+        <div class="mini-value" id="ultimaLeitura">--</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>📋 Histórico de Alertas</h2>
+        <button id="limparBtn">Limpar histórico</button>
+      </div>
+      <ul id="historico">
+        <li class="vazio">Nenhum evento registrado ainda.</li>
+      </ul>
+    </section>
+
+    <section class="card controles">
+      <h2>⚙️ Controles</h2>
+      <div class="controles-row">
+        <button id="muteBtn" class="btn-controle">🔔 Som: Ligado</button>
+        <button id="testarBtn" class="btn-controle">🧪 Testar Alerta</button>
+        <button id="notifBtn" class="btn-controle">🔔 Ativar Notificações</button>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast">
+    <div class="toast-icon">🚨</div>
+    <div class="toast-body">
+      <div class="toast-title">ALERTA — CEMEI Zacarelli</div>
+      <div class="toast-msg" id="toastMsg">Criança detectada na porta!</div>
+    </div>
+    <button class="toast-close" id="toastClose">✕</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

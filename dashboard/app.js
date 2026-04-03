@@ -1,0 +1,216 @@
+const firebaseConfig = {
+  apiKey:            "AIzaSyAZku1jcVLXtxzR_d-lR2y4liR_qFCLN_0",
+  authDomain:        "integrador-univesp.firebaseapp.com",
+  databaseURL:       "https://integrador-univesp-default-rtdb.firebaseio.com",
+  projectId:         "integrador-univesp",
+  storageBucket:     "integrador-univesp.firebasestorage.app",
+  messagingSenderId: "1033756329950",
+  appId:             "1:1033756329950:web:ea2585d83ac3f1bca13f4f"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const alertCard   = document.getElementById("alertCard");
+const alertIcon   = document.getElementById("alertIcon");
+const alertTitle  = document.getElementById("alertTitle");
+const alertMsg    = document.getElementById("alertMsg");
+const estaturaVal = document.getElementById("estaturaVal");
+const statusVal   = document.getElementById("statusVal");
+const ultimaLeit  = document.getElementById("ultimaLeitura");
+const statusPill  = document.getElementById("statusPill");
+const statusPillT = document.getElementById("statusPillText");
+const historico   = document.getElementById("historico");
+const toast       = document.getElementById("toast");
+const toastMsg    = document.getElementById("toastMsg");
+const muteBtn     = document.getElementById("muteBtn");
+const testarBtn   = document.getElementById("testarBtn");
+const notifBtn    = document.getElementById("notifBtn");
+const limparBtn   = document.getElementById("limparBtn");
+const toastClose  = document.getElementById("toastClose");
+
+let muted        = false;
+let audioCtx     = null;
+let toastTimer   = null;
+let ultimoAlerta = false;
+let resetTimer   = null; // O nosso cronómetro mágico
+let primeiraLeitura = true; // <-- A nossa nova trava de segurança!
+
+function setStatusErro(msg) {
+  statusPill.className    = "status-pill";
+  statusPillT.textContent = msg;
+}
+
+function iniciarListeners() {
+  db.ref("leituras").limitToLast(1).on("child_added", function(snap) {
+    const dados = snap.val();
+    if (!dados) return;
+
+// Se for a primeira vez que o site carrega, ele descarta o histórico e fica em silêncio
+    if (primeiraLeitura) {
+      primeiraLeitura = false;
+      
+// Muda o botão lá em cima para mostrar que o site já conectou ao banco de dados:
+      statusPill.className    = "status-pill online";
+      statusPillT.textContent = "Online";
+      
+      return; 
+    }
+
+    // A partir da segunda leitura (quando o Arduino mandar um alerta real), ele dispara!
+    atualizarUI(dados);
+  }, function(erro) {
+    setStatusErro("Erro de ligação");
+    console.error("Firebase erro:", erro);
+  });
+}
+
+function iniciarFirebase() {
+  iniciarListeners();
+}
+
+function beep(freq = 880, durMs = 600, vol = 0.1) {
+  if (muted) return;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.value = vol;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  setTimeout(() => osc.stop(), durMs);
+}
+
+function beepAlerta() {
+  beep(1000, 200, 0.12);
+  setTimeout(() => beep(1000, 200, 0.12), 300);
+  setTimeout(() => beep(1000, 400, 0.12), 600);
+}
+
+function mostrarToast(mensagem) {
+  toastMsg.textContent = mensagem;
+  toast.classList.add("visivel");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("visivel"), 8000);
+}
+
+toastClose.addEventListener("click", () => toast.classList.remove("visivel"));
+
+function pedirPermissaoNotificacao() {
+  if (!("Notification" in window)) {
+    alert("O seu navegador não suporta notificações.");
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    if (perm === "granted") {
+      notifBtn.textContent = "✅ Notificações ativas";
+      notifBtn.disabled = true;
+    }
+  });
+}
+
+function notificarSistema(titulo, corpo) {
+  if (Notification.permission === "granted") {
+    new Notification(titulo, {
+      body: corpo,
+      icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png"
+    });
+  }
+}
+
+function adicionarHistorico(estatura, alerta) {
+  const vazio = historico.querySelector(".vazio");
+  if (vazio) vazio.remove();
+  const agora = new Date().toLocaleTimeString("pt-BR");
+  const li = document.createElement("li");
+  if (alerta) {
+    li.className = "alerta-item";
+    li.textContent = "🚨 " + agora + " — Criança detetada! Estatura: " + estatura + " cm";
+  } else {
+    li.textContent = "✅ " + agora + " — Porta livre. Estatura: " + estatura + " cm";
+  }
+  historico.insertBefore(li, historico.firstChild);
+  while (historico.children.length > 30) {
+    historico.removeChild(historico.lastChild);
+  }
+}
+
+function atualizarUI(dados) {
+  const alerta   = !!dados.alerta;
+  const estatura = dados.estatura_cm !== undefined ? dados.estatura_cm : "--";
+  const agora    = new Date().toLocaleTimeString("pt-BR");
+
+  // Se o Arduino avisou que há uma criança na porta...
+  if (alerta) {
+    // 1. Atualiza os painéis visuais para PERIGO
+    estaturaVal.textContent = estatura;
+    statusVal.textContent   = "⚠️ ALERTA";
+    ultimaLeit.textContent  = agora;
+
+    statusPill.className    = "status-pill alerta";
+    statusPillT.textContent = "ALERTA ATIVO";
+
+    alertCard.classList.add("ativo");
+    alertIcon.textContent  = "🚨";
+    alertTitle.textContent = "ATENÇÃO — Criança na Porta!";
+    alertMsg.textContent   = "Estatura detetada: " + estatura + " cm. Verifique a entrada imediatamente!";
+
+    // 2. Dispara o som, histórico e pop-up UMA VEZ por ocorrência
+    if (!ultimoAlerta) {
+      beepAlerta();
+      mostrarToast("Criança detetada! Estatura: " + estatura + " cm");
+      notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança na porta!");
+      adicionarHistorico(estatura, true);
+      ultimoAlerta = true; // Trava para não fazer barulho sem parar
+    }
+
+    // 3. A MÁGICA: Zera o cronómetro. 
+    // Se a placa ficar 6 segundos sem mandar alerta, o site limpa o ecrã.
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(voltarAoNormal, 6000); 
+  }
+}
+
+function voltarAoNormal() {
+  // Retorna toda a interface para o status "Porta Livre"
+  estaturaVal.textContent = "--";
+  statusVal.textContent   = "✅ Normal";
+  ultimaLeit.textContent  = new Date().toLocaleTimeString("pt-BR");
+
+  statusPill.className    = "status-pill online";
+  statusPillT.textContent = "Online";
+
+  alertCard.classList.remove("ativo");
+  alertIcon.textContent  = "✅";
+  alertTitle.textContent = "Porta Livre";
+  alertMsg.textContent   = "Nenhuma criança detetada no momento.";
+
+  // Salva no histórico que a porta ficou livre e destrava o próximo alarme
+  if (ultimoAlerta) {
+    adicionarHistorico("--", false);
+    ultimoAlerta = false; 
+  }
+}
+
+muteBtn.addEventListener("click", function() {
+  muted = !muted;
+  muteBtn.textContent = muted ? "🔕 Som: Desligado" : "🔔 Som: Ligado";
+});
+
+testarBtn.addEventListener("click", function() {
+  atualizarUI({ alerta: true, estatura_cm: 110 });
+});
+
+notifBtn.addEventListener("click", pedirPermissaoNotificacao);
+
+limparBtn.addEventListener("click", function() {
+  historico.innerHTML = '<li class="vazio">Nenhum evento registado ainda.</li>';
+});
+
+if (Notification.permission === "default") {
+  setTimeout(pedirPermissaoNotificacao, 2000);
+}
+
+iniciarFirebase();
