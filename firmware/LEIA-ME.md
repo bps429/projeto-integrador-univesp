@@ -50,7 +50,7 @@ Baixe em: https://www.arduino.cc/en/software
 Edite no início do arquivo `.ino`:
 
 ```cpp
-const int ALTURA_SENSOR_CM = 200; // altura do sensor até o chão (meça com fita)
+const int ALTURA_SENSOR_CM = 220; // altura do sensor até o chão (meça com fita)
 const int ESTATURA_MIN = 60;      // estatura mínima para considerar criança
 const int ESTATURA_MAX = 140;     // estatura máxima para considerar criança
 ```
