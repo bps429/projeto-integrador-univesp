@@ -16,7 +16,7 @@ Sistema IoT desenvolvido para o CEMEI Zacarelli que detecta crianças na porta d
 ### Funcionamento
 - Sensor instalado a 200 cm do chão, apontando para baixo
 - Mede distância até a pessoa na porta
-- **Estatura = 200 − distância medida**
+- **Estatura = 220 − distância medida**
 - Se estatura entre **60 e 140 cm** → Criança → envia alerta
 - Se fora desse range → Adulto → status OK
 
