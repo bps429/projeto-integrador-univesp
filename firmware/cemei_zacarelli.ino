@@ -15,7 +15,7 @@
 #include "secrets.h" // A sua aba de senhas continua aqui!
 
 // ── CALIBRAÇÃO ──────────────────────────────────────────────
-const int ALTURA_SENSOR_CM = 200;
+const int ALTURA_SENSOR_CM = 220;
 const int ESTATURA_MIN     = 60;
 const int ESTATURA_MAX     = 140;
 
