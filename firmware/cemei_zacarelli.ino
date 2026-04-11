@@ -16,8 +16,8 @@
 
 // ── CALIBRAÇÃO ──────────────────────────────────────────────
 const int ALTURA_SENSOR_CM = 220;
-const int ESTATURA_MIN     = 60;
-const int ESTATURA_MAX     = 140;
+const int ESTATURA_MIN     = 30;
+const int ESTATURA_MAX     = 120;
 
 // ── FIREBASE ────────────────────────────────────────────────
 const char* FIREBASE_HOST = "https://integrador-univesp-default-rtdb.firebaseio.com";
