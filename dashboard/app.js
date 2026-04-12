@@ -33,8 +33,8 @@ let muted        = false;
 let audioCtx     = null;
 let toastTimer   = null;
 let ultimoAlerta = false;
-let resetTimer   = null; // O nosso cronômetro mágico
-let inicializou = false; // A nossa trava definitiva à prova de falhas!
+let resetTimer   = null; 
+let inicializou  = false; 
 
 function setStatusErro(msg) {
   statusPill.className    = "status-pill";
@@ -44,26 +44,22 @@ function setStatusErro(msg) {
 function iniciarListeners() {
   const referencia = db.ref("leituras").limitToLast(1);
 
-  // 1. Escuta a entrada de dados (tanto o histórico velho quanto os alertas novos)
   referencia.on("child_added", function(snap) {
     const dados = snap.val();
     if (!dados) return;
 
-    // Se o sistema ainda não terminou de ler o passado, fica em silêncio e ignora!
     if (!inicializou) return;
 
-    // Se passar daqui, é porque é um dado 100% novo. Dispara o alarme!
     atualizarUI(dados);
   }, function(erro) {
     setStatusErro("Erro de ligação");
     console.error("Firebase erro:", erro);
   });
 
-  // 2. O Firebase dispara o "value" uma única vez após ler todo o histórico antigo.
   referencia.once("value", function() {
-    inicializou = true; // Destrava o alarme para os próximos movimentos na porta
+    inicializou = true; 
     statusPill.className    = "status-pill online";
-    statusPillT.textContent = "Online"; // Fica verde imediatamente ao abrir o ecrã!
+    statusPillT.textContent = "Online"; 
   });
 }
 
@@ -144,9 +140,7 @@ function atualizarUI(dados) {
   const estatura = dados.estatura_cm !== undefined ? dados.estatura_cm : "--";
   const agora    = new Date().toLocaleTimeString("pt-BR");
 
-  // Se o Arduino avisou que há uma criança na porta...
   if (alerta) {
-    // 1. Atualiza os painéis visuais para PERIGO
     estaturaVal.textContent = estatura;
     statusVal.textContent   = "⚠️ ALERTA";
     ultimaLeit.textContent  = agora;
@@ -159,24 +153,26 @@ function atualizarUI(dados) {
     alertTitle.textContent = "ATENÇÃO — Criança na Porta!";
     alertMsg.textContent   = "Estatura detectada: " + estatura + " cm. Verifique a entrada imediatamente!";
 
-    // 2. Dispara o som, histórico e pop-up UMA VEZ por ocorrência
+    // --- MUDANÇA NA ABA DO NAVEGADOR ---
+    document.title = "🚨 ALERTA: Criança na Porta!";
+    let iconeAba = document.querySelector("link[rel*='icon']");
+    if(iconeAba) iconeAba.href = "https://cdn-icons-png.flaticon.com/512/564/564619.png"; 
+    // -----------------------------------
+
     if (!ultimoAlerta) {
       beepAlerta();
       mostrarToast("Criança detectada! Estatura: " + estatura + " cm");
       notificarSistema("🚨 CEMEI Zacarelli — ALERTA", "Criança na porta!");
       adicionarHistorico(estatura, true);
-      ultimoAlerta = true; // Trava para não fazer barulho sem parar
+      ultimoAlerta = true; 
     }
 
-    // 3. A MÁGICA: Zera o cronômetro. 
-    // Se a placa ficar 6 segundos sem mandar alerta, o site limpa o ecrã.
     clearTimeout(resetTimer);
     resetTimer = setTimeout(voltarAoNormal, 6000); 
   }
 }
 
 function voltarAoNormal() {
-  // Retorna toda a interface para o status "Porta Livre"
   estaturaVal.textContent = "--";
   statusVal.textContent   = "✅ Normal";
   ultimaLeit.textContent  = new Date().toLocaleTimeString("pt-BR");
@@ -189,7 +185,12 @@ function voltarAoNormal() {
   alertTitle.textContent = "Porta Livre";
   alertMsg.textContent   = "Nenhuma criança detectada no momento.";
 
-  // Salva no histórico que a porta ficou livre e destrava o próximo alarme
+  // --- VOLTA A ABA DO NAVEGADOR AO NORMAL ---
+  document.title = "CEMEI Zacarelli";
+  let iconeAba = document.querySelector("link[rel*='icon']");
+  if(iconeAba) iconeAba.href = "favicon.ico"; 
+  // ------------------------------------------
+
   if (ultimoAlerta) {
     adicionarHistorico("--", false);
     ultimoAlerta = false; 
