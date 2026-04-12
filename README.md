@@ -11,7 +11,7 @@ Sistema IoT desenvolvido para o CEMEI Zacarelli que detecta crianças na porta d
 ### Componentes de Hardware
 - ESP32 DevKit V1
 - Sensor laser VL53L0X (I2C)
-- Power Bank 10.000mAh
+- Power Bank 5.000mAh
 
 ### Funcionamento
 - Sensor instalado a 200 cm do chão, apontando para baixo
