@@ -12,7 +12,7 @@
 #include <WiFiClientSecure.h>
 #include <time.h>
 
-#include "secrets.h" // A sua aba de senhas continua aqui!
+#include "secrets.h" // A aba de senhas fica de fora do GitHub!
 
 // ── CALIBRAÇÃO ──────────────────────────────────────────────
 const int ALTURA_SENSOR_CM = 220;
@@ -20,9 +20,10 @@ const int ESTATURA_MIN     = 30;
 const int ESTATURA_MAX     = 120;
 
 // ── FIREBASE ────────────────────────────────────────────────
-const char* FIREBASE_HOST = "https://integrador-univesp-default-rtdb.firebaseio.com";
+// AS CHAVES ABAIXO FORAM OCULTADAS POR SEGURANÇA NO GITHUB
+const char* FIREBASE_HOST = "https://SEU_PROJETO_AQUI.firebaseio.com";
 const char* FIREBASE_PATH = "/leituras";
-const char* FIREBASE_API_KEY = "AIzaSyAZku1jcVLXtxzR_d-xxxxxxxxxxxxxxxxx"; // Chave ocultada por segurança
+const char* FIREBASE_API_KEY = "SUA_API_KEY_OCULTA"; 
 
 // ── PINAGEM I2C (PLACA NOVA - ESP32 DevKit V1) ──────────────
 #define SDA_PIN 21
@@ -30,8 +31,9 @@ const char* FIREBASE_API_KEY = "AIzaSyAZku1jcVLXtxzR_d-xxxxxxxxxxxxxxxxx"; // Ch
 
 VL53L0X sensor;
 
-const unsigned long INTERVALO_MS = 500;
+const unsigned long INTERVALO_MS = 100; // (10 leituras por segundo)
 unsigned long ultimaLeitura = 0;
+unsigned long tempoUltimoAdulto = 0;    // Filtro para ignorar braços/pernas
 
 bool ultimoAlerta = false;
 int  ultimaEstatura = -1;
@@ -59,11 +61,11 @@ bool firebaseSignIn() {
 
   WiFiClientSecure client;
   client.setInsecure();
-  client.setTimeout(15000); // MÁGICA 1: Paciência para a rede
+  client.setTimeout(15000); 
 
   HTTPClient http;
-  http.setTimeout(15000); // MÁGICA 2: Paciência para a nuvem
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); // MÁGICA 3: Seguir o Google
+  http.setTimeout(15000); 
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); 
   
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
@@ -131,8 +133,15 @@ void setup() {
     Serial.println("   Verifique a fiação SDA/SCL e alimentação.");
     while (true) { delay(1000); }
   }
+
+  // --- HACK DE ENGENHARIA: ATIVANDO O MODO LONGO ALCANCE (2 METROS) ---
+  sensor.setSignalRateLimit(0.1);
+  sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
+  sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+  // -------------------------------------------------------------------
+
   sensor.startContinuous();
-  Serial.println("✅ Sensor VL53L0X OK!");
+  Serial.println("✅ Sensor VL53L0X OK (Modo Longo Alcance Ativo)!");
   Serial.println("──────────────────────────────────────────");
 }
 
@@ -154,7 +163,7 @@ void loop() {
     return;
   }
 
-  int distCm    = distMm / 10;
+  int distCm     = distMm / 10;
   int estaturaCm = ALTURA_SENSOR_CM - distCm;
 
   if (estaturaCm <= 0 || estaturaCm > ALTURA_SENSOR_CM) {
@@ -162,7 +171,20 @@ void loop() {
     return;
   }
 
-  bool alerta = (estaturaCm >= ESTATURA_MIN && estaturaCm <= ESTATURA_MAX);
+  // --- LÓGICA: FILTRO DE ADULTO (COOLDOWN) ---
+  if (estaturaCm > ESTATURA_MAX) {
+    tempoUltimoAdulto = millis(); 
+  }
+
+  bool alerta = false;
+  if (estaturaCm >= ESTATURA_MIN && estaturaCm <= ESTATURA_MAX) {
+    if (millis() - tempoUltimoAdulto > 2000) {
+      alerta = true;
+    } else {
+      Serial.println("⚠️  Ignorado: Rastro de adulto detectado na zona");
+    }
+  }
+  // -------------------------------------------
 
   Serial.printf("📏 Distância: %d cm | Estatura: %d cm | %s\n",
                 distCm, estaturaCm,
@@ -222,11 +244,11 @@ void enviarFirebase(int estatura, bool alerta) {
   for (int tentativa = 1; tentativa <= 3; tentativa++) {
     WiFiClientSecure client;
     client.setInsecure();
-    client.setTimeout(15000); // MÁGICA 1
+    client.setTimeout(15000); 
 
     HTTPClient http;
-    http.setTimeout(15000); // MÁGICA 2
-    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); // MÁGICA 3
+    http.setTimeout(15000); 
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); 
     
     http.begin(client, url);
     http.addHeader("Content-Type", "application/json");
